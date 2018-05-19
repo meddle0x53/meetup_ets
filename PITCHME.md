@@ -37,16 +37,25 @@
 defmodule RequestsPerUser do
   use GenServer
 
+  def start_link do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
   def init(_), do: {:ok, %{}}
 
   def update(user) do
     GenServer.cast(__MODULE__, {:update, user})
   end
-  def get(user), do: GenServer.call(__MODULE__, {:get, user})
 
+  def get(user), do: GenServer.call(__MODULE__, {:get, user})
+```
+
+---
+```elixir
   def handle_call({:get, user}, _, state) do
     {:reply, Map.get(state, user, 0), state}
   end
+
   def handle_cast({:update, user}, state) do
     {:noreply, Map.update(state, user, 1, & &1 + 1)}
   end
@@ -335,7 +344,12 @@ insert_new - Не създава ако нещо съществува вече:
   ]
 )
 #=> false
+```
 
+---
+insert_new - Не създава ако нещо съществува вече:
+
+```elixir
 :ets.info(:people, :size)
 #=> 2
 ```
@@ -522,10 +536,17 @@ match_func =
 defmodule RequestsPerUser do
   use GenServer
 
+  def start_link do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
   def init(_) do
     {:ok, :ets.new(__MODULE__, [:named_table, :public])}
   end
+```
 
+---
+```elixir
   def update(user) do
     :ets.update_counter(__MODULE__, user, {2, 1}, {user, 0})
   end
@@ -611,12 +632,17 @@ defmodule Heir do
   end
 
   def init(_), do: {:ok, %{}}
+```
 
+---
+```elixir
   def handle_info({:"ETS-TRANSFER", table, from, data}, state) do
     IO.puts("#{inspect table} transfered from")
     IO.puts("#{inspect from} to #{inspect self()}")
+
     {:noreply, Map.put(state, table, data)}
   end
+
   def handle_call({:transfer_data, table}, _, state) do
     {:reply, Map.get(state, table), state}
   end
@@ -638,7 +664,10 @@ end)
 
 #output: :some_table transfered from
 #output: #PID<0.118.0> to #PID<0.115.0>
+```
 
+---
+```elixir
 :ets.info(:some_table, :owner)
 #=> #PID<0.115.0>
 ```
@@ -657,6 +686,9 @@ end)
 ### Наследници
 * Ако не зададем наследник при създаване на таблицата, можем да го направим в последствие, използвайки :ets.setopts(table, heir_tuple). |
 * Възможно е да променим собственика на таблица и ръчно, даже, когато процесът-собственик на таблицата още съществува. |
+
+---
+### Наследници
 * Това става с :ets.give_away/3 (:ets.give_away(table, heir_pid, transfer_data)). |
 * По подразбиране наследника има стойност :none. Винаги можем да премахнем наследник, като зададем тази стойност. |
 
